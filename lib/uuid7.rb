@@ -18,6 +18,6 @@ module UUID7
   # @param timestamp [Integer] the timestamp to use for UUID v7
   # @return [String] the generated UUID v7 string
   def self.generate(timestamp: Process.clock_gettime(Process::CLOCK_REALTIME, :millisecond))
-    format("%08x-%04x-%04x-%04x-%04x%08x", *Generator.generate(*Sequencer.sequence(timestamp)))
+    format("%08x-%04x-%04x-%04x-%04x%08x", *Generator.generate(timestamp))
   end
 end

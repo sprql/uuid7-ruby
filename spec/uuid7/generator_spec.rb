@@ -2,10 +2,9 @@
 
 RSpec.describe UUID7::Generator do
   context "generate UUID v7 layout" do
-    let(:timestamp) { Time.now.to_i }
-    let(:sequence) { 0 }
+    let(:timestamp) { make_timestamp }
 
-    subject { described_class.generate(timestamp, sequence) }
+    subject { described_class.generate(timestamp) }
 
     it do
       expect(subject).to contain_exactly(be_a(Integer),
@@ -18,11 +17,10 @@ RSpec.describe UUID7::Generator do
   end
 
   context "generate different layouts" do
-    let(:timestamp) { Time.now.to_i }
-    let(:sequence) { 0 }
+    let(:timestamp) { make_timestamp }
 
     def new_uuid7
-      described_class.generate(timestamp, sequence)
+      described_class.generate(timestamp)
     end
 
     it do

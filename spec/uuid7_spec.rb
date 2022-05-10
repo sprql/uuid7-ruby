@@ -5,7 +5,7 @@ RSpec.describe UUID7 do
     expect(UUID7::VERSION).not_to be nil
   end
 
-  it "does something useful" do
-    expect(false).to eq(true)
+  it "generate a UUID v7 string" do
+    expect(described_class.generate).to match(/\w{8}-\w{4}-7\w{3}-\w{4}-\w{4}\w{8}/)
   end
 end

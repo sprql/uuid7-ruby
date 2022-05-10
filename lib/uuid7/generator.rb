@@ -5,9 +5,8 @@ module UUID7
   #
   # @api private
   #
-  # 32 bits for unix timestamp seconds
-  # 12 bits for millisecond precision
-  # 62 bits for random data
+  # 48 bits for unix timestamp with millisecond precision
+  # 74 bits for random data
   #
   module Generator
     VERSION_7 = 0x7000
@@ -15,42 +14,41 @@ module UUID7
 
     # Instantiates a new layout
     #
-    # @example Generate a new UUID v7 layout for the millisecond and sequence count
-    #   UUID::V7.generate(timestamp, sequence)
+    # @example Generate a new UUID v7 layout for the millisecond
+    #   UUID::V7.generate(timestamp)
     #
     # @param timestamp [Integer] the timestamp to use for the layout
-    # @param seq [Integer] the sequence to use for the layout
     # @return [Array<Integer>] the generated UUID v7 layout
-    def self.generate(timestamp, seq)
-      unixts = timestamp / 1_000 # seconds of unix timestamp
-      unixts1 = (unixts >> 4) & 0xffffffff # take 32 most significant bits of 36
-      unixts2 = (unixts & 0xf) << 12 # take 4 least significant bits of 36
+    def self.generate(timestamp)
+      unix_ts_ms = timestamp & 0xffffffffffff # take 48 least significant bits of timestamp
+      unix_ts_ms1 = (unix_ts_ms >> 16) & 0xffffffff # take 32 most significant bits of timestamp
+      unix_ts_ms2 = (unix_ts_ms & 0xffff) # take 16 least significant bits of timestamp
 
-      msec = timestamp % 1_000 # milliseconds of unix timestamp
-      msec &= 0xfff # take 12 bits of 16
+      rand_a, rand_b1, rand_b2, rand_b3 = SecureRandom.gen_random(10).unpack("nnnN")
+      rand_a &= 0xfff # take 12 bits of 16
+      rand_b1 &= 0x3fff # take 14 bits of 16
 
-      rand1, rand2, rand3 = SecureRandom.gen_random(8).unpack("nnN")
-      rand1 &= 0x3fff # take 14 bits of 16
-
-      # https://datatracker.ietf.org/doc/html/draft-peabody-dispatch-new-uuid-format-01#section-4.4.4.1
-      #
+      # https://www.ietf.org/id/draft-peabody-dispatch-new-uuid-format-03.txt#section-5.2
+      #  0                   1                   2                   3
       #  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
       # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      # |                            unixts1                            |
+      # |                           unix_ts_ms                          |
       # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      # |unixts2|         msec          |  ver  |          seq          |
+      # |          unix_ts_ms           |  ver  |       rand_a          |
       # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      # |var|           rand1           |             rand2             |
+      # |var|                        rand_b                             |
       # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-      # |                             rand3                             |
+      # |                            rand_b                             |
       # +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+      # layout in bits [32, 16, 16, 16, 16, 32]
       [
-        unixts1,
-        (unixts2 | msec),
-        (VERSION_7 | seq),
-        (VARIANT_RFC4122 | rand1),
-        rand2,
-        rand3
+        unix_ts_ms1,
+        unix_ts_ms2,
+        (VERSION_7 | rand_a),
+        (VARIANT_RFC4122 | rand_b1),
+        rand_b2,
+        rand_b3
       ]
     end
   end
